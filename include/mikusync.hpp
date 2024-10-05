@@ -1,3 +1,6 @@
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -8,15 +11,13 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <iomanip>
-#include <nlohmann/json.hpp>
-#include "imgui.h"
-#include "imgui_impl_win32.h"
-#include "imgui_impl_dx11.h"
+#include "nlohmann/json.hpp"
 #include <d3d11.h>
 #include <tchar.h>
 #include <windows.h>
 #include <mmsystem.h>
 #include "stb_image.h"
+
 
 
 struct note{

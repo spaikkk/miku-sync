@@ -2,7 +2,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "mikusync.hpp"
 
-
 ID3D11Device*            g_pd3dDevice = nullptr;
 ID3D11DeviceContext*     g_pd3dDeviceContext = nullptr;
 IDXGISwapChain*          g_pSwapChain = nullptr;

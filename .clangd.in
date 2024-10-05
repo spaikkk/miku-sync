@@ -1,0 +1,6 @@
+CompileFlags:
+  CompilationDatabase: "@CMAKE_BINARY_DIR@"
+Index:
+  StandardLibrary: Yes
+Hover:
+  ShowAKA: Yes
