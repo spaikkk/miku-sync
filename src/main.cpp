@@ -1,3 +1,6 @@
+#include <d3d11.h>
+#include <filesystem>
+#include <imgui.h>
 #define _CRT_SECURE_NO_WARNINGS
 #define STB_IMAGE_IMPLEMENTATION
 #include "mikusync.hpp"
@@ -35,12 +38,15 @@ std::string get_file() {
 
 int main() {
 
+
+  //create vectors to store decode log and json content
+  std::vector<std::string> messages;
+  std::vector<track> tracce;
   /*
       GUI STUFF
   */
 
-  std::vector<std::string> messages;
-  std::vector<track> tracce;
+ 
   // Create application window
   WNDCLASSEXW wc = {sizeof(wc),
                     CS_CLASSDC,
@@ -94,22 +100,34 @@ int main() {
   bool palle = false;
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-  // still image rendering
-  int my_image_width = 0;
-  int my_image_height = 0;
-  ID3D11ShaderResourceView *my_texture = NULL;
-  bool ret = LoadTextureFromFile("damiano.jpg", &my_texture, &my_image_width,
-                                 &my_image_height);
+  std::vector<custom_img> textures;
+  load_images(textures);
+  int testicoli = 0;
+  for (auto &sesso : textures) {
+    fmt::print("{}: {}", testicoli, sesso.name);
+    testicoli++;
+  }
+  /*
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  */
 
-  IM_ASSERT(ret);
+  ImVec4 blue_colour = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+
+  // IM_ASSERT(ret);
   //
-  // Main loop
+  int contatore_note_debug = 0;
+  //  Main loop
+  bool custom_lips_wdw = false;
+  bool custom_lips_sel_wdw = false;
   bool coglioni = true;
   bool done = false;
   bool log_window = false;
   bool json_window = false;
   bool random = false;
   bool sbinnala = false;
+  bool finestra_beta = false;
+  int custom_lip_id;
   while (!done) {
     // Poll and handle messages
     MSG msg;
@@ -167,7 +185,10 @@ int main() {
         zip_file.close();
 
         read_vpr(buffer, messages);
-        json_window = processa_json(buffer, tracce);
+
+        //process the json and store the data in a track struct
+        json_window = process_json(buffer, tracce);
+        std::cout << "DEBUG: NUMERO NOTE" << tracce[0].parts[0].notes.size() << std::endl;
       }
       ImGui::Text("Seleziona la traccia da associare al lip sync");
       ImGui::Checkbox("Soft [VB: Hatsune Miku]", &palle);
@@ -179,12 +200,19 @@ int main() {
       if (ImGui::Button("Decode Log")) {
         log_window = true;
       }
+      if (ImGui::Button("Beta Lips")) {
+        finestra_beta = true;
+      }
+      if(ImGui::Button("Custom lips animation")){
+        custom_lips_wdw = true;
+      }
 
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                   1000.0f / io.Framerate, io.Framerate);
       ImGui::End();
     }
     if (json_window) {
+      ImGui::Begin("Tracce", &json_window);
       ImGui::Text("Rilevate tracce multiple!");
       for (auto traccia : tracce) {
         std::string messaggio = fmt::format("Name: {}", traccia.name);
@@ -195,7 +223,7 @@ int main() {
 
     if (log_window) {
       ImGui::Begin("Decode log", &log_window);
-
+      
       for (auto mess : messages) {
         ImGui::Text("%s", mess.c_str());
       }
@@ -203,24 +231,83 @@ int main() {
       ImGui::Text("Prova");
       ImGui::End();
     }
+
+    if(custom_lips_wdw){
+      ImGui::Begin("Custom lips animation");
+      
+      std::vector<std::string> lip_lirycs;
+      for(int note_butt_it = 0; note_butt_it <= tracce[0].parts[0].notes.size()-1; note_butt_it++){
+        if((note_butt_it%8!=0)){
+          ImGui::SameLine();
+        }
+        lip_lirycs.push_back(tracce[0].parts[0].notes[note_butt_it].lyric);
+        ImGui::PushID(note_butt_it);
+        if(ImGui::Button(tracce[0].parts[0].notes[note_butt_it].lyric.c_str())){
+          custom_lip_id = note_butt_it;
+          custom_lips_sel_wdw = true;
+        }
+        ImGui::PopID();
+      }
+      ImGui::End();
+    }
+
+    if(custom_lips_sel_wdw){
+      ImGui::Begin("Change lip animation");
+      std::string title = fmt::format("Selected Phoeneme: {}", tracce[0].parts[0].notes[custom_lip_id].lyric);
+      ImGui::Text("%s", title.c_str());
+      std::string current_mouth = fmt::format("{}", 
+                  print_kuchi(tracce[0].parts[0].notes[custom_lip_id].kuchi));
+      ImGui::Text("Current mouth_anim assigned: ");
+      ImGui::SameLine();
+      ImGui::TextColored(blue_colour, "%s", current_mouth.c_str());
+      if(ImGui::Button("KUCHI_A")){
+        tracce[0].parts[0].notes[custom_lip_id].kuchi = KUCHI_A;
+      }
+      if(ImGui::Button("KUCHI_E")){
+        tracce[0].parts[0].notes[custom_lip_id].kuchi = KUCHI_E;
+      }
+      if(ImGui::Button("KUCHI_I")){
+        tracce[0].parts[0].notes[custom_lip_id].kuchi = KUCHI_I;
+      }
+      if(ImGui::Button("KUCHI_O")){
+        tracce[0].parts[0].notes[custom_lip_id].kuchi = KUCHI_O;
+      }
+      if(ImGui::Button("KUCHI_U")){
+        tracce[0].parts[0].notes[custom_lip_id].kuchi = KUCHI_U;
+      }
+      if(ImGui::Button("KUCHI_RESET")){
+        tracce[0].parts[0].notes[custom_lip_id].kuchi = KUCHI_RESET;
+      }
+      if(ImGui::Button("Close")){
+        custom_lips_sel_wdw = false;
+        custom_lip_id = NULL;
+      }
+      ImGui::End();
+    }
+
+
     // 3. Show another simple window.
+    
     if (show_another_window) {
       ImGui::Begin("Damiano", &show_another_window);
 
       ImGui::Text("Vespasiano dei rasputin dice:");
-      ImGui::Image((void *)my_texture, ImVec2(my_image_width, my_image_height));
+      ImGui::Image((void *)textures[13].texture, ImVec2(textures[13].img_x, textures[13].img_y));
 
-      if (ImGui::Button("Mi sono toccato i coglioni"))
-        show_another_window = false;
+      if (ImGui::ImageButton((void*)textures[12].texture, ImVec2(textures[12].img_x,
+      textures[12].img_y))){ show_another_window = false;
+      }
+
 
       ImGui::End();
       if (coglioni) {
-        PlaySound(TEXT("fuori.wav"), NULL, SND_FILENAME | SND_ASYNC);
-        coglioni = false;
+        PlaySound(TEXT("./bocche/viconviene.wav"), NULL, SND_FILENAME |
+        SND_ASYNC); coglioni = false;
+        }
+      }else {
+        coglioni = true;
       }
-    } else {
-      coglioni = true;
-    }
+    
 
     // Rendering
     ImGui::Render();

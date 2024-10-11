@@ -75,11 +75,79 @@ int read_vpr(std::vector<char> &buffer, std::vector<std::string> &messages) {
   return 0;
 }
 
+
+/*
+  analyze the phoneme and assign the right mouth animation
+*/
+int is_vowel(char c){
+  return(c=='a'||c=='e'||c=='i'||c=='o'||c=='u');
+}
+int is_close(char c){
+  return(c=='b'||c=='p'||c=='m');
+}
+
+int assign_kuchi(std::string phoneme){
+  int value;
+  char last_char = phoneme.at(phoneme.length()-1);
+  char first_char = phoneme[0];
+  if(is_close(first_char)){
+    return 69; //signals that the kuchi assegnation should be treated differently
+  }
+  if(is_vowel(last_char)){
+    switch(last_char){
+      case 'a':
+        value = KUCHI_A;
+        break;
+      case 'e':
+        value = KUCHI_E;
+        break;
+      case 'i':
+        value = KUCHI_I;
+        break;
+      case 'o':
+        value = KUCHI_O;
+        break;
+      case 'u':
+        value = KUCHI_U;
+        break;
+    }
+  }else{
+    value = KUCHI_RESET;
+  }
+  return value;
+
+}
+
+
 /*
     Json Parsing
 */
 
-int processa_json(std::vector<char> &buffer, std::vector<track> &tracks) {
+std::string print_kuchi(int kuchi){
+  std::string format;
+  if(kuchi==KUCHI_A){
+    format = "KUCHI_A";
+  }else if(kuchi==KUCHI_E){
+    format = "KUCHI_E";
+  }else if(kuchi==KUCHI_I){
+    format = "KUCHI_I";
+  }else if(kuchi==KUCHI_O){
+    format = "KUCHI_O";
+  }else if(kuchi==KUCHI_U){
+    format = "KUCHI_U";
+  }else if(kuchi==KUCHI_RESET){
+    format = "KUCHI_RESET";
+  }else if(kuchi==69){
+    format = "KUCHI_SPECIAL";
+  }else{
+    format = "ERROR";
+  }
+  return format;
+}
+
+
+
+int process_json(std::vector<char> &buffer, std::vector<track> &tracks) {
   int cont_prova = 0;
   int stop_prova = 0;
   std::ofstream testxt("test.txt");
@@ -93,8 +161,10 @@ int processa_json(std::vector<char> &buffer, std::vector<track> &tracks) {
       new_part.name = part_it["name"];
       for (auto &note_it : *part_it.find("notes")) {
         note new_note;
+        new_note.kuchi = assign_kuchi(note_it["lyric"]);
         new_note.lyric = note_it["lyric"];
         new_note.duration = note_it["duration"];
+        new_note.pos = note_it["pos"];
         new_part.notes.push_back(new_note);
       }
       new_track.parts.push_back(new_part);
@@ -114,9 +184,14 @@ int processa_json(std::vector<char> &buffer, std::vector<track> &tracks) {
       part_count++;
       for (auto it_note : it_part.notes) {
         testxt << "         Lyric: " << it_note.lyric
-               << ", duration: " << it_note.duration << std::endl;
+               << ", duration: " << it_note.duration << ", Pos: " << it_note.pos << std::endl;
+        testxt << "STAMPA KUCHI: " << print_kuchi(it_note.kuchi) << std::endl;
       }
     }
   }
+
+
+
+
   return 1;
 }

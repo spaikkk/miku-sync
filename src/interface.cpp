@@ -178,3 +178,27 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   }
   return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
+
+void load_images(std::vector<custom_img> &images) {
+
+  std::string path_to_mouth = "./bocche/";
+  std::vector<std::string> names;
+  for (auto &entry : std::filesystem::directory_iterator(path_to_mouth)) {
+
+    if (entry.path().extension() == ".jpg") {
+      names.push_back(entry.path().filename().string());
+    }
+  }
+  std::sort(names.begin(), names.end());
+  for (auto &name : names) {
+    custom_img new_texture;
+    new_texture.img_x = 0;
+    new_texture.img_y = 0;
+    new_texture.texture = NULL;
+    new_texture.name = name;
+    bool ret = LoadTextureFromFile((path_to_mouth + name).c_str(),
+                                   &new_texture.texture, &new_texture.img_x,
+                                   &new_texture.img_y);
+    images.push_back(new_texture);
+  }
+}
